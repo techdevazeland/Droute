@@ -54,9 +54,11 @@ code = '''<!DOCTYPE html>
         width:90%;
         text-align:center;
         margin:10px;
-        overflow-x:auto;
         background:#fff;
         border-radius:10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; /* Añade puntos suspensivos si el texto se desborda */
     }
 @font-face {
     font-family: caption;
@@ -65,18 +67,21 @@ code = '''<!DOCTYPE html>
 </style>
 </head>
 <body style="background:#EEE; margin:0px; font-family:caption;">
-    <div style="display:flex; background:#FFF; justify-content: center; align-items: center;"><h3 style="margin-left:20px; color:#8098ff; flex:1;">Droute</h3><h3 style="margin-right:10px; background:<!-- AUTOCRON_COLOR -->; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-alarm-fill" id="autocron" onclick="window.location.href = './autocron';"></h3><h3 style="margin-right:10px; background:#AAA; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-trash3-fill" id="del"></h3><h3 style="margin-right:20px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-upload" id="seleccionarArchivo"></h3></div>
+    <div style="display:flex; background:#FFF; justify-content: center; align-items: center;"><h3 style="margin-left:20px; color:#8098ff; flex:1;">Droute</h3><h3 style="margin-right:10px; background:<!-- AUTOCRON_COLOR -->; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-alarm-fill" id="autocron" onclick="window.location.href = './autocron';"></h3><h3 style="margin-right:10px; background:#AAA; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-trash3-fill" id="del"></h3><h3 style="margin-right:20px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-upload" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'block';"></h3></div>
+    <div id="uploadpanel" style="display:none;">
+    <div style="position:fixed; top:0px; left:0px; right:0px; bottom:0px; background:#000; z-index:10; opacity:0.5;" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'none';"></div>
+    <div style="position:fixed; top:10%; left:10%; right:10%; background:#FFF; z-index:15; padding:20px; border-radius:20px;"><div style="display:flex;"><h3 style="color:#8098ff; flex:1;">Subir archivo</h3><h3 style="margin-right:10px;" class="bi bi-x-circle" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'none';"></h3></div>
+    <center><div style="width:70%; background:#8098ff; color:white; padding:30px; text-align:center; border-radius:20px; border:dashed 2px; padding-top:50px; padding-bottom:50px;" onclick="document.getElementById('inputFile').click()"><h3 id="progress">ESCOGER</h3></div></center>
+    <input type="file" style="display:none;" id="inputFile">
+    </div>
+    </div>
     <div style="display:flex; background:#FFF; justify-content: center; align-items: center; padding:10px;" id="herr">
-        <div style="background:#8098ff; padding:10px; color:white; flex:1; margin:5px; text-align:center; border-radius:10px;" class="bi bi-play-circle"></div>
-        <div style="background:#8098ff; padding:10px; color:white; flex:1; margin:5px; text-align:center; border-radius:10px;" class="bi bi-info-circle"></div>
+        <div style="background:#8098ff; padding:10px; color:white; flex:1; margin:5px; text-align:center; border-radius:10px;" class="bi bi-x-circle" onclick="deselect()"> DESELECCIONAR</div>
     </div>
 <div class="contenedor">
     <!-- FILES -->
 </div>
-<form action="./upload" method="POST">
-<input type="file" id="archivoInput" style="display:none;">
-<input type="submit" id="submitInput" style="display:none;">
-</form>
+
 <!-- INFO -->
 
 <script>
@@ -122,7 +127,7 @@ function delete_select() {
 var content_del = document.getElementById("del");
     files = seleccionado.split('/')
     for (let i = 0; i < files.length; i++) {
-    requests('./delete', {'file':files[i]}, function(text) {console.log(text)});
+    requests('./delete?file='+files[i], {}, function(text) {console.log(text)});
     fil = document.getElementById(files[i]);
     fil.style.display = "none";
     seleccionado = "";
@@ -132,23 +137,10 @@ var content_del = document.getElementById("del");
 herr.style.display = "none"; content_del.removeEventListener('click', delete_select);
     }
 }
-// Obtener el botón div y el botón input
-var divSeleccionarArchivo = document.getElementById('seleccionarArchivo');
-var inputArchivo = document.getElementById('archivoInput');
-var inputSubmit = document.getElementById('submitInput');
-
-divSeleccionarArchivo.addEventListener('click', function() {
-inputArchivo.click();
-});
-
-inputArchivo.addEventListener('change', function() {
-    const archivo = inputArchivo.files[0]; // Obtener el archivo seleccionado
-    inputSubmit.click()
-});
 
 function requests(url, datos, callback) {
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
+    xhr.open("GET", url, true);
     xhr.setRequestHeader("Content-Type", "application/json");
 
     xhr.onreadystatechange = function () {
@@ -165,6 +157,53 @@ setTimeout(function(){
 },5000)
 herr = document.getElementById("herr");
 herr.style.display = "none";
+function uploadFile() {
+            const fileInput = document.getElementById('inputFile');
+            const file = fileInput.files[0];
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+            formData.append('file', file);
+
+            xhr.upload.onprogress = function(event) {
+                const progress = Math.round((event.loaded / event.total) * 100);
+                document.getElementById('progress').innerText = `${progress}%`;
+            };
+
+            xhr.onload = function() {
+                if (xhr.status == 200) {
+                    console.log('File uploaded successfully');
+                    document.getElementById("uploadpanel").style.display = "none";
+                    document.getElementById('progress').innerText = 'ESCOGER';
+                    window.location.href = "./";
+                } else {
+                    console.error('Error uploading file');
+                    document.getElementById('progress').innerText = 'ERROR';
+                }
+            };
+
+            xhr.open('POST', './upload', true);
+            xhr.send(formData);
+        }
+inputFile = document.getElementById("inputFile");
+inputFile.addEventListener('change', function() {
+    uploadFile()
+});
+function deselect() {
+    files = seleccionado.split('/');
+    for (let i = 0; i < files.length; i++) {
+    gestionarNombres(files[i]);
+    content = document.getElementById(files[i]);
+    logo = document.getElementById(files[i]+'-logo');
+    content.style.background = '#8098ff';
+    logo.style.color = '#FFF';
+    var content_del = document.getElementById('del');
+    content_del.style.background = '#AAA';
+    content_del.style.color = '#FFF';
+    content_del.removeEventListener('click', delete_select);
+    var herr = document.getElementById('herr');
+    herr.style.display = 'none';
+    }
+}
 </script>
 </body>
 </html>
@@ -204,14 +243,16 @@ def autocrondef():
 def deletefile():
     data = request.args
     file = data["file"]
-    os.remove("./blueprints/code/"+file)
+    if not file == "":
+        os.remove("./blueprints/code/"+file)
     return "eliminado"
 @droute.route("/font/<file>")
 def fontget(file):
     return send_file("./blueprints/font/"+file)
 @droute.route("/upload", methods=["POST"])
-def uploadfile():
+def upload():
     print(request.files)
     file = request.files['file']
-    file.save("./blueprints/code/"+file.filename)
-    return "<script>window.location.href = './?info=Archivo "+file+" subido correctamente!!';</script>"
+    filename = str(file.filename).replace(" ", "").replace("(", "").replace(")", "").replace("{", "").replace("}", "").replace("[", "").replace("]", "")
+    file.save("./blueprints/code/"+filename)
+    return "Archivo "+filename+" subido correctamente!!"
