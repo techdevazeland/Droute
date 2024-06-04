@@ -7,15 +7,10 @@ import threading
 droute = Blueprint('droute', __name__)
 autocron_val = False
 autocron_host = ""
-def autocron_job():
-    global autocron_val
-    global autocron_host
+def autocron_job(host):
     while True:
-        time.sleep(30)
-        if autocron_val:
-            requests.get("https://"+autocron_host)
-t = threading.Thread(target=autocron_job)
-t.start()
+        time.sleep(10)
+        requests.get("https://"+host)
 code = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,7 +62,7 @@ code = '''<!DOCTYPE html>
 </style>
 </head>
 <body style="background:#EEE; margin:0px; font-family:caption;">
-    <div style="display:flex; background:#FFF; justify-content: center; align-items: center;"><h3 style="margin-left:20px; color:#8098ff; flex:1;">Droute</h3><h3 style="margin-right:10px; background:<!-- AUTOCRON_COLOR -->; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-alarm-fill" id="autocron" onclick="window.location.href = './autocron';"></h3><h3 style="margin-right:10px; background:#AAA; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-trash3-fill" id="del"></h3><h3 style="margin-right:20px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-upload" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'block';"></h3></div>
+    <div style="display:flex; background:#FFF; justify-content: center; align-items: center;"><h3 style="margin-left:20px; color:#8098ff; flex:1;">Droute</h3><h3 style="margin-right:10px; background:#AAA; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-trash3-fill" id="del"></h3><h3 style="margin-right:20px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-upload" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'block';"></h3></div>
     <div id="uploadpanel" style="display:none;">
     <div style="position:fixed; top:0px; left:0px; right:0px; bottom:0px; background:#000; z-index:10; opacity:0.5;" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'none';"></div>
     <div style="position:fixed; top:10%; left:10%; right:10%; background:#FFF; z-index:15; padding:20px; border-radius:20px;"><div style="display:flex;"><h3 style="color:#8098ff; flex:1;">Subir archivo</h3><h3 style="margin-right:10px;" class="bi bi-x-circle" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'none';"></h3></div>
@@ -211,8 +206,12 @@ function deselect() {
 @droute.route('/')
 def app_home():
     global autocron_val
-    global autocron_host
     autocron_host = request.host
+    print(autocron_host)
+    if not autocron_val:
+        t = threading.Thread(target=autocron_job, args=(autocron_host,))
+        t.start()
+        autocron_val = True
     autocron_color = "#AAA"
     if autocron_val:
         autocron_color = "#8098FF"
