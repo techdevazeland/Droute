@@ -7,6 +7,23 @@ import threading
 droute = Blueprint('droute', __name__)
 autocron_val = False
 autocron_host = ""
+def getsize_path(ruta):
+    return sum(os.path.getsize(os.path.join(carpeta_actual, archivo))
+               for carpeta_actual, subcarpetas, archivos in os.walk(ruta)
+               for archivo in archivos)
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+        if abs(num) < 1024.0:
+            return "%3.2f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.2f%s%s" % (num, 'Yi', suffix)
+def unlink(path):
+    if os.path.isfile(path):
+        os.remove(path)
+    elif os.path.isdir(path):
+        shutil.rmtree(path)
+if not os.path.exists("./blueprints/cloud"):
+    os.mkdir("./blueprints/cloud")
 def autocron_job(host):
     while True:
         time.sleep(10)
@@ -16,6 +33,7 @@ code = '''<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Droute</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 <style>
@@ -45,6 +63,7 @@ code = '''<!DOCTYPE html>
     }
     .name {
         position: absolute;
+        bottom:5px;
         z-index: 2;
         width:90%;
         text-align:center;
@@ -73,16 +92,15 @@ code = '''<!DOCTYPE html>
     <div style="display:flex; background:#FFF; justify-content: center; align-items: center; padding:10px;" id="herr">
         <div style="background:#8098ff; padding:10px; color:white; flex:1; margin:5px; text-align:center; border-radius:10px;" class="bi bi-x-circle" onclick="deselect()"> DESELECCIONAR</div>
     </div>
-<div class="contenedor">
-    <!-- FILES -->
-</div>
-
+    <div id="files">
+        
+    </div>
 <!-- INFO -->
 
 <script>
 
 var seleccionado = "";
-
+var dir = "./";
 function gestionarNombres(nombre) {
   if (seleccionado.includes(nombre)) {
     seleccionado = seleccionado.replace(new RegExp(nombre + "/", ""), "");
@@ -122,7 +140,7 @@ function delete_select() {
 var content_del = document.getElementById("del");
     files = seleccionado.split('/')
     for (let i = 0; i < files.length; i++) {
-    requests('./delete?file='+files[i], {}, function(text) {console.log(text)});
+    requests('./delete?file='+files[i],  function(text) {console.log(text)});
     fil = document.getElementById(files[i]);
     fil.style.display = "none";
     seleccionado = "";
@@ -133,7 +151,7 @@ herr.style.display = "none"; content_del.removeEventListener('click', delete_sel
     }
 }
 
-function requests(url, datos, callback) {
+function requests(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.setRequestHeader("Content-Type", "application/json");
@@ -144,7 +162,7 @@ function requests(url, datos, callback) {
         }
     };
 
-    xhr.send(JSON.stringify(datos));
+    xhr.send(JSON.stringify({}));
 }
 setTimeout(function(){
     info = document.getElementById("info");
@@ -199,9 +217,28 @@ function deselect() {
     herr.style.display = 'none';
     }
 }
+function getFiles() {
+    setTimeout(function(){
+    files = document.getElementById("files");
+    dirsect = document.getElementById("dirsect");
+    requests("./files?dir="+dir, function(response){
+        files.innerHTML = response;
+        dirsect.innerHTML = dir;
+    })
+},1000)
+
+}
+getFiles()
 </script>
 </body>
+<div style="height:80px; background:#FFF; opacity:0;"></div>
+<div style="height:40px; background:#FFF; position:fixed; bottom:0px; left:0px; right:0px; display:flex; padding:20px; justify-content: center; align-items: center; z-index:20;">
+    <div class="bi bi-archive" style="flex:1; text-align:center; background:#8098ff; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
+    <div class="bi bi-terminal" style="flex:1; text-align:center; background:#AAA; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
+    <div class="bi bi-boxes" style="flex:1; text-align:center; background:#AAA; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
+</div>
 </html>
+
 '''
 @droute.route('/')
 def app_home():
@@ -218,32 +255,29 @@ def app_home():
     info = ""
     if "info" in request.args:
         info = f'''<div style="position:fixed; bottom:0px; left:0px; right:0px; background:#8098ff; text-align:center; padding:10px;" id="info">{request.args["info"]}</div>'''
-    files = sorted(os.listdir("./blueprints/code"))
-    ftext = ""
+    return code.replace("<!-- INFO -->", info).replace("<!-- AUTOCRON_COLOR -->", autocron_color)
+@droute.route('/files')
+def files():
+    files = sorted(os.listdir("./blueprints/cloud"))
+    ftext = f''' <div style="margin:5px; background:#DDD; padding:5px; text-align:center; border-radius:20px;">
+        <i>{sizeof_fmt(getsize_path("./blueprints/cloud"))} / 15GiB</i>
+    </div>
+    <div class="contenedor">'''
     for f in files:
-        if os.path.isfile("./blueprints/code/"+f):
-            ftext += f'''<div class="cuadrado" onclick="addlist('{f}')" id="{f}">
+            if os.path.isfile("./blueprints/cloud/"+f):
+                ftext += f'''<div class="cuadrado" onclick="addlist('{f}')" id="{f}">
         <h1 class="logo bi bi-file-earmark" id="{f}-logo"></h1>
     <b class="name">{f}</b>
     </div>
     '''
-    return code.replace("<!-- FILES -->", ftext).replace("<!-- INFO -->", info).replace("<!-- AUTOCRON_COLOR -->", autocron_color)
-@droute.route('/autocron')
-def autocrondef():
-    global autocron_val
-    global autocron_host
-    if autocron_val:
-        autocron_val = False
-        return "<script>window.location.href = './?info=Autocron apagado!';</script>"
-    else:
-        autocron_val = True
-        return "<script>window.location.href = './?info=Autocron encendido!';</script>"
+    ftext += '''</div>'''
+    return ftext
 @droute.route('/delete', methods=["GET"])
 def deletefile():
     data = request.args
     file = data["file"]
     if not file == "":
-        os.remove("./blueprints/code/"+file)
+        os.remove("./blueprints/cloud/"+file)
     return "eliminado"
 @droute.route("/font/<file>")
 def fontget(file):
@@ -253,5 +287,5 @@ def upload():
     print(request.files)
     file = request.files['file']
     filename = str(file.filename).replace(" ", "").replace("(", "").replace(")", "").replace("{", "").replace("}", "").replace("[", "").replace("]", "")
-    file.save("./blueprints/code/"+filename)
+    file.save("./blueprints/cloud/"+filename)
     return "Archivo "+filename+" subido correctamente!!"
