@@ -148,6 +148,7 @@ var content_del = document.getElementById("del");
     content_del.style.color = "#FFF";
    herr = document.getElementById("herr");
 herr.style.display = "none"; content_del.removeEventListener('click', delete_select);
+getFiles();
     }
 }
 
@@ -187,7 +188,7 @@ function uploadFile() {
                     console.log('File uploaded successfully');
                     document.getElementById("uploadpanel").style.display = "none";
                     document.getElementById('progress').innerText = 'ESCOGER';
-                    window.location.href = "./";
+                    getFiles();
                 } else {
                     console.error('Error uploading file');
                     document.getElementById('progress').innerText = 'ERROR';
