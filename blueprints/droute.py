@@ -4,6 +4,31 @@ import os
 import time
 import requests
 import threading
+import subprocess
+
+def execute_shell(comando):
+    respuesta = ""
+    os.chdir("./blueprints/cloud")
+    try:
+        proceso = subprocess.Popen(comando, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        tiempo_inicio = time.time()
+        
+        while proceso.poll() is None:
+            tiempo_transcurrido = time.time() - tiempo_inicio
+            if tiempo_transcurrido > 40:
+                proceso.kill()
+                respuesta = "El comando ha tardado más de 10 segundos en ejecutarse, se ha cancelado."
+                break
+                
+        if not respuesta:
+            stdout, stderr = proceso.communicate()
+            respuesta = stdout.decode() if len(stdout) > 0 else stderr.decode()
+    
+    except subprocess.CalledProcessError as e:
+        respuesta = str(e)
+    os.chdir("../../")
+    return respuesta
+
 droute = Blueprint('droute', __name__)
 autocron_val = False
 autocron_host = ""
@@ -78,10 +103,22 @@ code = '''<!DOCTYPE html>
     font-family: caption;
     src: url("./font/caption.ttf");
 }
+@keyframes chargin {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    background-position: 0.5;
+  }
+  100% {
+    background-position: 1;
+  }
+}
 </style>
 </head>
-<body style="background:#EEE; margin:0px; font-family:caption;">
-    <div style="display:flex; background:#FFF; justify-content: center; align-items: center;"><h3 style="margin-left:20px; color:#8098ff; flex:1;">Droute <span style="color:#AAA;">Cloud</span></h3><h3 style="margin-right:10px; background:#AAA; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-trash3-fill" id="del"></h3><h3 style="margin-right:20px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-upload" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'block';"></h3></div>
+<body style="margin:0px;" onload="ls = document.getElementById('loadscreen'); ls.style.display = 'none'">
+<div style="background:#EEE; margin:0px; font-family:caption;" id="cloud">
+    <div style="display:flex; background:#FFF; justify-content: center; align-items: center;"><h3 style="margin-left:20px; color:#8098ff; flex:1;">Droute <span style="color:#AAA;">Cloud</span></h3><h3 style="margin-right:10px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-arrow-clockwise" onclick="window.location.href = './';"></h3><h3 style="margin-right:10px; background:#AAA; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-trash3-fill" id="del"></h3><h3 style="margin-right:20px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-upload" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'block';"></h3></div>
     <div id="uploadpanel" style="display:none;">
     <div style="position:fixed; top:0px; left:0px; right:0px; bottom:0px; background:#000; z-index:10; opacity:0.5;" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'none';"></div>
     <div style="position:fixed; top:10%; left:10%; right:10%; background:#FFF; z-index:15; padding:20px; border-radius:20px;"><div style="display:flex;"><h3 style="color:#8098ff; flex:1;">Subir archivo</h3><h3 style="margin-right:10px;" class="bi bi-x-circle" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'none';"></h3></div>
@@ -97,6 +134,14 @@ code = '''<!DOCTYPE html>
     </div>
 <!-- INFO -->
 
+</div>
+<div style="position:fixed; top:0px; bottom:0px; left:0px; right:0px; background:white; z-index:100; justify-content: center; align-items: center; text-align:center; color:#8098ff;" id="loadscreen"><h1 class="bi bi-alt" style="transform: translate(-50%, -100%); position:fixed; top:50%; left:50%; font-size:5em; animation: chargin 1s reverse infinite;"></h1></div>
+<div style="display:none; font-family:caption;" id="shell">
+    <div style="display:flex; background:#FFF; justify-content: center; align-items: center;"><h3 style="margin-left:20px; color:#8098ff; flex:1;">Droute <span style="color:#AAA;">Shell</span></h3><h3 style="margin-right:20px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-caret-right-fill" onclick="shellExcecution()"></h3></div>
+    <div id="console" style="font-size:0.8em; padding:20px; background:#EEE; margin:10px; border-radius:20px; overflow-x: auto;"><b>Droute Shell - Terminal 1.0 GNU/LINUX</b><br><br>  - Esta en una Shell Rápida, es para ejecución de comandos rápidos, no se admiten comandos tardíos como ejecutar un código python con bucle. Debe durar menos de 40 segundos.</div>
+    <input style="position:fixed; bottom:80px; left:0px; right:0px; height:40px; background:#EEE; border:none; padding-left:20px; padding-right:20px; font-family:caption;" type="text" placeholder="Escriba aquí su comando y pulse 'Play'" id="command">
+    <div style="height:120px; background:#EEE; opacity:0;"></div>
+</div>
 <script>
 
 var seleccionado = "";
@@ -228,13 +273,25 @@ function getFiles() {
 
 }
 getFiles()
+function shellExcecution() {
+            command = document.getElementById('command');
+            console = document.getElementById('console');
+            if (command.value == '') {
+                console.innerHTML = '<b>Droute Shell - Terminal 1.0 GNU/LINUX</b><br><br>  - Debe escribir un comando antes de ejecutar.';
+            } else {
+                console.innerHTML = '<b>Droute Shell - Terminal 1.0 GNU/LINUX</b><br><br>  <center>Cargando...</center>';
+                requests("./shell?command="+command.value, function(response){
+                    console.innerHTML = '<b>Droute Shell - Terminal 1.0 GNU/LINUX</b><br><center>($ '+command.value+')</center><br><br>'+response;
+                });
+            }
+        }
 </script>
 </body>
 <div style="height:80px; background:#FFF; opacity:0;"></div>
 <div style="height:40px; background:#FFF; position:fixed; bottom:0px; left:0px; right:0px; display:flex; padding:20px; justify-content: center; align-items: center; z-index:20;">
-    <div class="bi bi-cloud" style="flex:1; text-align:center; background:#8098ff; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
-    <div class="bi bi-terminal" style="flex:1; text-align:center; background:#AAA; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
-    <div class="bi bi-boxes" style="flex:1; text-align:center; background:#AAA; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
+    <div class="bi bi-cloud" style="flex:1; text-align:center; background:#8098ff; padding:10px; color:white; border-radius:20px; margin:5px;" id="cloud-button" onclick="cloud = document.getElementById('cloud'); shell = document.getElementById('shell'); cloud_button = document.getElementById('cloud-button'); shell_button = document.getElementById('shell-button'); cloud.style.display = 'block'; shell.style.display = 'none'; cloud_button.style.background = '#8098ff'; shell_button.style.background = '#AAA'"></div>
+    <div class="bi bi-terminal" style="flex:1; text-align:center; background:#AAA; padding:10px; color:white; border-radius:20px; margin:5px;" id="shell-button" onclick="cloud = document.getElementById('cloud'); shell = document.getElementById('shell'); cloud_button = document.getElementById('cloud-button'); shell_button = document.getElementById('shell-button'); cloud.style.display = 'none'; shell.style.display = 'block'; cloud_button.style.background = '#AAA'; shell_button.style.background = '#8098ff'"></div>
+    <div class="bi bi-boxes" style="flex:1; text-align:center; background:#AAA; padding:10px; color:white; border-radius:20px; margin:5px;" id="cajas-button"></div>
 </div>
 </html>
 
@@ -278,6 +335,10 @@ def deletefile():
     if not file == "":
         os.remove("./blueprints/cloud/"+file)
     return "eliminado"
+@droute.route("/shell")
+def shell():
+    command = request.args.get('command')
+    return execute_shell(command).replace("\n", "<br>")
 @droute.route("/font/<file>")
 def fontget(file):
     return send_file("./blueprints/font/"+file)
