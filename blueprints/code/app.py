@@ -55,7 +55,7 @@ code = '''
 </head>
 <body style="margin:0px; background:#8098ff; font-family:caption;">
     
-    <div style="padding:20px; text-align:center;"><h1 style="color:white;">Droute</h1></div>
+    <div style="padding:20px; text-align:center;"><h1 style="color:white;"><span class="bi bi-alt"></span>Droute</h1></div>
     <div style="background:white; position:fixed; top:15%; bottom:0px; left:0px; right:0px; padding:20px; border-radius:20px 20px 0px 0px;">
         <center><h4>Bienvenido a Droute!!</h4><div style="width:80%; background:#8098ff; color:white; padding:10px; text-align:center; border-radius:20px;" onclick="window.location.href = './droute';">DASHBOARD</div><br><hr style="border-color:#8098ff; border:solid 1px #8098ff;"><br>
         <h3 style="color:#3f4a7d;">Facil, Rápido y Personalizable</h3>
