@@ -81,7 +81,7 @@ code = '''<!DOCTYPE html>
 </style>
 </head>
 <body style="background:#EEE; margin:0px; font-family:caption;">
-    <div style="display:flex; background:#FFF; justify-content: center; align-items: center;"><h3 style="margin-left:20px; color:#8098ff; flex:1;">Droute</h3><h3 style="margin-right:10px; background:#AAA; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-trash3-fill" id="del"></h3><h3 style="margin-right:20px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-upload" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'block';"></h3></div>
+    <div style="display:flex; background:#FFF; justify-content: center; align-items: center;"><h3 style="margin-left:20px; color:#8098ff; flex:1;">Droute <span style="color:#AAA;">Cloud</span></h3><h3 style="margin-right:10px; background:#AAA; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-trash3-fill" id="del"></h3><h3 style="margin-right:20px; background:#8098ff; padding:10px; color:#FFF; border-radius:20px;" class="bi bi-upload" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'block';"></h3></div>
     <div id="uploadpanel" style="display:none;">
     <div style="position:fixed; top:0px; left:0px; right:0px; bottom:0px; background:#000; z-index:10; opacity:0.5;" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'none';"></div>
     <div style="position:fixed; top:10%; left:10%; right:10%; background:#FFF; z-index:15; padding:20px; border-radius:20px;"><div style="display:flex;"><h3 style="color:#8098ff; flex:1;">Subir archivo</h3><h3 style="margin-right:10px;" class="bi bi-x-circle" onclick="upboard = document.getElementById('uploadpanel'); upboard.style.display = 'none';"></h3></div>
@@ -221,10 +221,8 @@ function deselect() {
 function getFiles() {
     setTimeout(function(){
     files = document.getElementById("files");
-    dirsect = document.getElementById("dirsect");
     requests("./files?dir="+dir, function(response){
         files.innerHTML = response;
-        dirsect.innerHTML = dir;
     })
 },1000)
 
@@ -234,7 +232,7 @@ getFiles()
 </body>
 <div style="height:80px; background:#FFF; opacity:0;"></div>
 <div style="height:40px; background:#FFF; position:fixed; bottom:0px; left:0px; right:0px; display:flex; padding:20px; justify-content: center; align-items: center; z-index:20;">
-    <div class="bi bi-archive" style="flex:1; text-align:center; background:#8098ff; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
+    <div class="bi bi-cloud" style="flex:1; text-align:center; background:#8098ff; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
     <div class="bi bi-terminal" style="flex:1; text-align:center; background:#AAA; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
     <div class="bi bi-boxes" style="flex:1; text-align:center; background:#AAA; padding:10px; color:white; border-radius:20px; margin:5px;"></div>
 </div>
