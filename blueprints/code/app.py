@@ -49,7 +49,7 @@ code = '''
     }
         @font-face {
     font-family: caption;
-    src: url("./font/caption.ttf");
+    src: url("./droute/font/caption.ttf");
 }
     </style>
 </head>
